@@ -19,17 +19,19 @@ chambers = list(range(1,24))   # array containing the number of chambers
 
 if __name__ == '__main__':    #defines this file as primary module
     # calls the serial monitor using serial.Serial at port 'ttyACM0' (change if needed),
-    # sets the baud rate (needs to be the same as the Arduino), and sets a
-    # timeout so that if the Arduino stops sending info the Pi doesn't
-    # get stuck in a loop
-    ser1 = serial.Serial('/dev/ttyACM0', 9600, timeout = 1) #need a better way to definitively ID the Arduino in each port
-    #ser2 = serial.Serial('/dev/ttyACM1', 9600, timeout = 1)
-    #ser3 = serial.Serial('/dev/ttyACM2', 9600, timeout = 1)
-    #ser4 = serial.Serial('/dev/ttyACM3', 9600, timeout = 1)
-    #ser5 = serial.Serial('/dev/ttyACM4', 9600, timeout = 1)
-    #ser6 = serial.Serial('/dev/ttyACM5', 9600, timeout = 1)
-    #ser7 = serial.Serial('/dev/ttyACM6', 9600, timeout = 1)
-    #ser8 = serial.Serial('/dev/ttyACM7', 9600, timeout = 1)
+      # sets the baud rate (needs to be the same as the Arduino), and sets a
+      # timeout so that if the Arduino stops sending info the Pi doesn't
+      # get stuck in a loop
+    # each Arduino has been assigned a symlink in the Raspberry Pi's udev rules,
+      # see README for more information
+    ser1 = serial.Serial('/dev/arduino1', 9600, timeout = 1)
+    #ser2 = serial.Serial('/dev/arduino2', 9600, timeout = 1)
+    #ser3 = serial.Serial('/dev/arduino3', 9600, timeout = 1)
+    #ser4 = serial.Serial('/dev/arduino4', 9600, timeout = 1)
+    #ser5 = serial.Serial('/dev/arduino5', 9600, timeout = 1)
+    #ser6 = serial.Serial('/dev/arduino6', 9600, timeout = 1)
+    #ser7 = serial.Serial('/dev/arduino7', 9600, timeout = 1)
+    #ser8 = serial.Serial('/dev/arduino8', 9600, timeout = 1)
     # clearing buffer
     ser1.flush()
     #ser2.flush()
@@ -76,14 +78,14 @@ if __name__ == '__main__':    #defines this file as primary module
                 # can be sensor reasing or status printout
             signpost,chamber,message = received.split("~")
             # prints turbidity reading for visibility
-            print("Signpost: " + signpost + ",  Message: " + message)
+            print("Signpost -" + signpost + "- from chamber " + chamber + ".  Message: " + message)
             # turbidity reading from Tank 1 Chamber 1
             if signpost == "t":
                 with open("Turbidity_Record.csv", "a") as fileA:
                     # row format: tank number, chamber number, datetime, turbidity reading
                     datarow = ["1", chamber, when, message]
                     writer = csv.writer(fileA)
-                    writer.writerow(datarow)
+                    writer.writerow(datarow)  #not sure this line is necessary
                     waiting += 1
             # recording the time of water change for each tank chamber
             elif signpost == "w":
