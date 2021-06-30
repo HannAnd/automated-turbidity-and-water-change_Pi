@@ -12,6 +12,23 @@ during water changes, 4) lower water in tank chambers to
 appropriate levels to film fish behavior while minimizing
 movement along the z-axis.
 
+Symbolic links are used to create persistent names for each of
+the Arduino used. The Vendor ID, Product ID and Serial Number
+are used to identify the individual Arduinos. (These values
+can be found by entering the console command
+"udevadm info -n /dev/[tty port occupied by the Arduino]". To
+create the symbolic link a custom udev file "99-usb-serial.rules"
+was created in the directory "/etc/udev/rules.d". The file
+followed the below format:
+
+SUBSYSTEM=="tty", ATTRS{idVendor}=="[Vendor ID]", 
+ATTRS{idProduct}=="[Product ID]",
+ATTRS{serial}=="[Serial Number]",
+SYMLINK+="[persistent name]", MODE=="0777"
+
+With the above script repeated for each Arduino.
+
+
 In development:
 waterchange_test.py
 scheduled_waterchange.py
