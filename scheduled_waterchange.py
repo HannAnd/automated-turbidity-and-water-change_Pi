@@ -1,6 +1,3 @@
-###make sure all of the signposts are the appropriate INTEGERS
-###they will be going through a switch-case so no strings
-
 # Cron will initiate this file at the specified times to start a water change
 # when this script runs it's supposed to immediately start the water change process
 

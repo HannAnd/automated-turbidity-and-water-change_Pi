@@ -16,7 +16,9 @@ once = "no"
 
 
 if __name__ == '__main__':
-    ser1 = serial.Serial('/dev/arduino1', 9600, timeout = 1)  #ls /dev/tty*
+    # each Arduino has been assigned a symlink in the Pi's udev rules
+        #see README for more information
+    ser1 = serial.Serial('/dev/arduino7', 9600, timeout = 1)
     # clearing buffer
     ser1.flush()
     # short delay before first read request
@@ -28,12 +30,12 @@ if __name__ == '__main__':
             ser1.write(b"1~NA\n")
             start = "no"
         if ready == 3 and once == "no":
-            #ser1.write(b"2~620;640!629\n")  # chamber 1;chamber 2!chamber3
-            ser1.write(b"2~620\n")
+            # sending the calibrated clear water values for each of the three tank chambers
+            ser1.write(b"2~620\n")  # chamber 1
             time.sleep(1)
-            ser1.write(b"3~640\n")
+            ser1.write(b"3~769\n")  # chamber 2, calibrated to 12cm
             time.sleep(1)
-            ser1.write(b"4~629\n")
+            ser1.write(b"4~629\n")  # chamber 3
             time.sleep(1)
             once = "yes"
         
@@ -95,6 +97,6 @@ if __name__ == '__main__':
                     writer.writerow(datarow)
                     ready = "yes"
                     #chambers.remove(int(message))
-            
-                    
-                    
+                
+                        
+                        
