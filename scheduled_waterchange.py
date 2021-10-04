@@ -5,11 +5,27 @@ import serial    # allows Pi to read serial data
 import time    # allows Pi to keep track of time
 import csv    # for writing turbidity readings to CSV
 from datetime import datetime    # for recording the time a turbidity reading was taken
+import random  # allows Pi to randomize list order
 ready = "no"    # indicates when the next water change can start (assuming only one at a time for now)
 waiting = 0    # keeps track of how many tanks are ready to start the water change cycle
-# list containing numbers for each tank chamber
-# numbers will be removed from the array as water changes are completed on each chamber
-chambers = list(range(1,24))   # array containing the number of chambers
+t1 = 0  # counter to keep track of which number on the randomized list the waterchanges have reached
+t2 = 0
+t3 = 0
+t4 = 0
+# list of water change messages for each tank chamber by Arduino#
+wchange = ["5~1\n", "5~2\n", "5~3\n", "5~1\n", "5~2\n", "5~3\n"]
+# holds variables that randomly decide between each pair of Arduinos
+    # 0-2 represent the first Arduino of the pair and 3-5 the second
+r1_2 = [0, 1, 2, 3, 4, 5]
+r3_4 = [0, 1, 2, 3, 4, 5]
+r5_6 = [0, 1, 2, 3, 4, 5]
+r7_8 = [0, 1, 2, 3, 4, 5]
+
+#tank chambers need to be divided into four groups:
+    #Arduinos 1 & 2, Arduinos 3 & 4,
+    #Arduinos 5 & 6, Arduinos 7 & 8
+#only one pump from each chamnber may be permitted to run at a time
+###put a script here that randomizes the order of tank chambers in each of those groups
 
 ### I need to learn more about arrays. I should have an array that contains every chamber that has done
 ### a water change this cycle and the randomizer refers to it before picking the next chamber
@@ -54,6 +70,70 @@ if __name__ == '__main__':    #defines this file as primary module
             #ser7.write(b"1~NA\n")
             #ser8.write(b"1~NA\n")
             start = "no"
+            
+        #below if-statment is main body of code. Should determine if we want to keep it
+            #here or dump it at the bottom of the file
+        # begins the water change cycle after all chambers have sent turbidities
+        if waiting == 24 and once == "no":
+            #math to calculate the clear water to add to each tank
+            #just going to have three clearwater variables in total because
+            #there are only three chambers per tank and each tank has its own
+            #Serial to contend with
+            #values going to arbitrary for now until calibrations can be done
+            ser1.write(b"2~" + clear1 + "\n")
+            time.sleep(0.5)
+            ser1.write(b"3~" + clear2 + "\n")
+            time.sleep(0.5)
+            ser1.write(b"4~" + clear3 + "\n")
+            #the same math
+            #ser2.write(b"2~" + clear1 + "\n")
+            #time.sleep(0.5)
+            #ser2.write(b"3~" + clear2 + "\n")
+            #time.sleep(0.5)
+            #ser2.write(b"4~" + clear3 + "\n")
+            #math again
+            #ser3.write(b"2~" + clear1 + "\n")
+            #time.sleep(0.5)
+            #ser3.write(b"3~" + clear2 + "\n")
+            #time.sleep(0.5)
+            #ser3.write(b"4~" + clear3 + "\n")
+            #math again
+            #ser4.write(b"2~" + clear1 + "\n")
+            #time.sleep(0.5)
+            #ser4.write(b"3~" + clear2 + "\n")
+            #time.sleep(0.5)
+            #ser4.write(b"4~" + clear3 + "\n")
+            #math again
+            #ser5.write(b"2~" + clear1 + "\n")
+            #time.sleep(0.5)
+            #ser5.write(b"3~" + clear2 + "\n")
+            #time.sleep(0.5)
+            #ser5.write(b"4~" + clear3 + "\n")
+            #math again
+            #ser6.write(b"2~" + clear1 + "\n")
+            #time.sleep(0.5)
+            #ser6.write(b"3~" + clear2 + "\n")
+            #time.sleep(0.5)
+            #ser6.write(b"4~" + clear3 + "\n")
+            #math again
+            #ser7.write(b"2~" + clear1 + "\n")
+            #time.sleep(0.5)
+            #ser7.write(b"3~" + clear2 + "\n")
+            #time.sleep(0.5)
+            #ser7.write(b"4~" + clear3 + "\n")
+            #so much of the same math
+            #ser8.write(b"2~" + clear1 + "\n")
+            #time.sleep(0.5)
+            #ser8.write(b"3~" + clear2 + "\n")
+            #time.sleep(0.5)
+            #ser8.write(b"4~" + clear3 + "\n")
+            # prevents Pi from sending clearwater values more than once
+            once = "yes"
+            
+            
+            
+        
+        # all code below deals with responses to Arduino messages
         
         # checks if something is in Serial
         if ser1.in_waiting > 0:
@@ -76,15 +156,67 @@ if __name__ == '__main__':    #defines this file as primary module
             signpost,chamber,message = received.split("~")
             # prints turbidity reading for visibility
             print("Signpost -" + signpost + "- from chamber " + chamber + ".  Message: " + message)
+            
+            
+            # all code below responds to messages based on the signpost
+            
             # turbidity reading from Tank 1 Chamber 1
             if signpost == "t":
+                # appends turbidity readings to existing csv without deleting old entries
                 with open("Turbidity_Record.csv", "a") as fileA:
                     # row format: tank number, chamber number, datetime, turbidity reading
                     datarow = ["1", chamber, when, message]
                     writer = csv.writer(fileA)
                     writer.writerow(datarow)  #not sure this line is necessary
                     waiting += 1
-            # recording the time of water change for each tank chamber
+            # an Arduino registering it is ready for water changes
+            # when all 24 chambers are ready water changes will start
+            elif signpost == "r":
+                timetostart += 1
+                # starting the first set of four water changes
+                if timetostart == 24:
+                    # randomizing water change order
+                    random.shuffle(r1_2)
+                    random.shuffle(r3_4)
+                    random.shuffle(r5_6)
+                    random.shuffle(r7_8)
+                    # values 0-2 represent Arduino 1 (the first of the pair) and 3-5 Arduino 2 (the second of the pair)
+                    if r1_2[t1] <= 2:
+                        i = r1_2[0]
+                        ser1.write(bytes(wchange[i], 'utf-8'))
+                        t1 += 1
+                    if r1_2[t1] >= 3:
+                        i = r1_2[0]
+                        ser2.write(bytes(wchange[i], 'utf-8'))
+                        t1 += 1
+                    if r3_4[t2] <= 2:
+                        i = r1_2[0]
+                        ser3.write(bytes(wchange[i], 'utf-8'))
+                        t2 += 1
+                    if r3_4[t2] >= 3:
+                        i = r1_2[0]
+                        ser4.write(bytes(wchange[i], 'utf-8'))
+                        t2 += 1
+                    if r5_6[t3] <= 2:
+                        i = r1_2[0]
+                        ser5.write(bytes(wchange[i], 'utf-8'))
+                        t3 += 1
+                    if r5_6[t3] >= 3:
+                        i = r1_2[0]
+                        ser6.write(bytes(wchange[i], 'utf-8'))
+                        t3 += 1
+                    if r7_8[t4] <= 2:
+                        i = r1_2[0]
+                        ser7.write(bytes(wchange[i], 'utf-8'))
+                        t4 += 1
+                    if r7_8[t4] >= 3:
+                        i = r1_2[0]
+                        ser8.write(bytes(wchange[i], 'utf-8'))
+                        t4 += 1
+                    timetostart == 25
+
+
+            # recording the time of water change for each tank chamber and then starting the next waterchange
             elif signpost == "w":
                 with open ("Waterchange_Record.csv", "a") as file:
                     # row format: tank number, chamber number, datetime
@@ -92,71 +224,17 @@ if __name__ == '__main__':    #defines this file as primary module
                     writer = csv.writer(file_b)
                     writer.writerow(datarow)
                     ready = "yes"
-                    chambers.remove(int(message))
+                    #keep in mind that all of this is still just for Arduino 1
+                    if r1_2[t1] <= 2:
+                        i = r1_2[t1]
+                        ser1.write(bytes(wchange[i], 'utf-8'))
+                        t1 += 1
+                    if r1_2[t1] >= 3:
+                        i = r1_2[t1]
+                        ser2.write(bytes(wchange[i], 'utf-8'))
+                        t1 += 1
         
-        # begins the water change cycle after all chambers have sent turbidities
-        if waiting == 24 and once == "no":
-            #math to calculate the clear water to add to each tank
-            #just going to have three clearwater variables in total because
-            #there are only three chambers per tank and each tank has its own
-            #Serial to contend with
-            ser1.write(b"2~" + clear1 + "\n")
-            time.sleep(0.5)
-            ser1.write(b"3~" + clear2 + "\n")
-            time.sleep(0.5)
-            ser1.write(b"4~" + clear3 + "\n")
-            
-            #the same math
-            #ser2.write(b"2~" + clear1 + "\n")
-            #time.sleep(0.5)
-            #ser2.write(b"3~" + clear2 + "\n")
-            #time.sleep(0.5)
-            #ser2.write(b"4~" + clear3 + "\n")
-            
-            #math again
-            #ser3.write(b"2~" + clear1 + "\n")
-            #time.sleep(0.5)
-            #ser3.write(b"3~" + clear2 + "\n")
-            #time.sleep(0.5)
-            #ser3.write(b"4~" + clear3 + "\n")
-            
-            #math again
-            #ser4.write(b"2~" + clear1 + "\n")
-            #time.sleep(0.5)
-            #ser4.write(b"3~" + clear2 + "\n")
-            #time.sleep(0.5)
-            #ser4.write(b"4~" + clear3 + "\n")
-            
-            #math again
-            #ser5.write(b"2~" + clear1 + "\n")
-            #time.sleep(0.5)
-            #ser5.write(b"3~" + clear2 + "\n")
-            #time.sleep(0.5)
-            #ser5.write(b"4~" + clear3 + "\n")
-            
-            #math again
-            #ser6.write(b"2~" + clear1 + "\n")
-            #time.sleep(0.5)
-            #ser6.write(b"3~" + clear2 + "\n")
-            #time.sleep(0.5)
-            #ser6.write(b"4~" + clear3 + "\n")
-            
-            #math again
-            #ser7.write(b"2~" + clear1 + "\n")
-            #time.sleep(0.5)
-            #ser7.write(b"3~" + clear2 + "\n")
-            #time.sleep(0.5)
-            #ser7.write(b"4~" + clear3 + "\n")
-            
-            #so much of the same math
-            #ser8.write(b"2~" + clear1 + "\n")
-            #time.sleep(0.5)
-            #ser8.write(b"3~" + clear2 + "\n")
-            #time.sleep(0.5)
-            #ser8.write(b"4~" + clear3 + "\n")
-            
-            # prevents Pi from sending clearwater values more than once
-            once = "yes"
+        
                     
             #and then a function that randomly picks chambers without repeats until all chambers are done
                     
